@@ -1,0 +1,29 @@
+groups:
+  - name: alertes_infrastructure
+    rules:
+      - alert: CPUChargeElevee
+        expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 90
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "CPU chargé sur {{ $labels.instance }}"
+          description: "Charge CPU au-dessus de 90% depuis plus de 30 secondes."
+
+      - alert: DisqueSature
+        expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) * 100 < 15
+        for: 30s
+        labels:
+          severity: warning
+        annotations:
+          summary: "Disque presque plein sur {{ $labels.instance }}"
+          description: "Moins de 15% d'espace disque libre."
+
+      - alert: NoeudInjoignable
+        expr: up{job="node_exporter"} == 0
+        for: 15s
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $labels.instance }} ne répond plus"
+          description: "Prometheus n'arrive plus à scraper ce nœud depuis 15 secondes."

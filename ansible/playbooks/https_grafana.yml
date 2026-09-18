@@ -1,0 +1,74 @@
+---
+- name: Sécuriser l'accès à Grafana avec Nginx et HTTPS
+  hosts: monitoring_server
+  become: yes
+
+  tasks:
+    - name: Installer Nginx et OpenSSL
+      ansible.builtin.apt:
+        name:
+          - nginx
+          - openssl
+        state: present
+        update_cache: yes
+
+    - name: Créer le dossier pour les certificats
+      ansible.builtin.file:
+        path: /etc/nginx/ssl
+        state: directory
+        mode: '0700'
+
+    - name: Générer un certificat auto-signé (valide 365 jours)
+      ansible.builtin.command:
+        cmd: >
+          openssl req -x509 -nodes -days 365 -newkey rsa:2048
+          -keyout /etc/nginx/ssl/grafana.key
+          -out /etc/nginx/ssl/grafana.crt
+          -subj "/C=CM/ST=Littoral/L=Douala/O=MonitoringLab/CN=monitoring-server"
+        creates: /etc/nginx/ssl/grafana.crt
+
+    - name: Déployer la configuration Nginx pour Grafana
+      ansible.builtin.copy:
+        dest: /etc/nginx/sites-available/grafana
+        content: |
+          server {
+              listen 443 ssl;
+              server_name monitoring-server;
+
+              ssl_certificate /etc/nginx/ssl/grafana.crt;
+              ssl_certificate_key /etc/nginx/ssl/grafana.key;
+
+              location / {
+                  proxy_pass http://127.0.0.1:3000;
+                  proxy_set_header Host $host;
+                  proxy_set_header X-Real-IP $remote_addr;
+                  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                  proxy_set_header X-Forwarded-Proto $scheme;
+              }
+          }
+
+          server {
+              listen 80;
+              server_name monitoring-server;
+              return 301 https://$host$request_uri;
+          }
+      notify: Recharger Nginx
+
+    - name: Activer le site Grafana
+      ansible.builtin.file:
+        src: /etc/nginx/sites-available/grafana
+        dest: /etc/nginx/sites-enabled/grafana
+        state: link
+      notify: Recharger Nginx
+
+    - name: Désactiver le site par défaut de Nginx
+      ansible.builtin.file:
+        path: /etc/nginx/sites-enabled/default
+        state: absent
+      notify: Recharger Nginx
+
+  handlers:
+    - name: Recharger Nginx
+      ansible.builtin.systemd:
+        name: nginx
+        state: reloaded

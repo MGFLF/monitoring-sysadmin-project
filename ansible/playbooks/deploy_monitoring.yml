@@ -1,0 +1,46 @@
+---
+- name: Déployer Prometheus, Alertmanager et Grafana
+  hosts: monitoring_server
+  become: yes
+  vars_files:
+    - ../vars/secrets.yml
+
+  tasks:
+    - name: Créer le dossier de déploiement
+      ansible.builtin.file:
+        path: /opt/monitoring
+        state: directory
+        mode: '0755'
+
+    - name: Créer le dossier de données persistantes pour Grafana
+      ansible.builtin.file:
+        path: /opt/monitoring/grafana-data
+        state: directory
+        owner: "472"
+        group: "472"
+        mode: '0755'
+
+    - name: Copier le dossier docker/ vers le serveur
+      ansible.builtin.copy:
+        src: ../../docker/
+        dest: /opt/monitoring/
+        mode: '0644'
+
+    - name: Créer le dossier alertmanager
+      ansible.builtin.file:
+        path: /opt/monitoring/alertmanager
+        state: directory
+        mode: '0755'
+
+    - name: Générer alertmanager.yml à partir du template (avec les secrets)
+      ansible.builtin.template:
+        src: ../templates/alertmanager.yml.j2
+        dest: /opt/monitoring/alertmanager/alertmanager.yml
+        owner: "65534"
+        group: "65534"
+        mode: '0600'
+
+    - name: Lancer la stack avec Docker Compose
+      ansible.builtin.command:
+        cmd: docker compose up -d
+        chdir: /opt/monitoring

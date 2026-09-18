@@ -1,0 +1,79 @@
+---
+- name: Sécuriser le serveur de monitoring
+  hosts: monitoring_server
+  become: yes
+  tasks:
+    - name: Autoriser SSH avant tout (ne jamais se couper l'accès)
+      community.general.ufw:
+        rule: allow
+        name: OpenSSH
+
+    - name: Autoriser l'accès à Grafana (port 443)
+      community.general.ufw:
+        rule: allow
+        port: '443'
+        proto: tcp
+
+    - name: Autoriser la redirection HTTP vers HTTPS (port 80)
+      community.general.ufw:
+        rule: allow
+        port: '80'
+        proto: tcp
+
+    - name: Autoriser l'accès à Prometheus (port 9090)
+      community.general.ufw:
+        rule: allow
+        port: '9090'
+        proto: tcp
+
+    - name: Autoriser l'accès à Alertmanager (port 9093)
+      community.general.ufw:
+        rule: allow
+        port: '9093'
+        proto: tcp
+
+    - name: Politique par défaut - refuser tout le trafic entrant
+      community.general.ufw:
+        direction: incoming
+        policy: deny
+
+    - name: Politique par défaut - autoriser tout le trafic sortant
+      community.general.ufw:
+        direction: outgoing
+        policy: allow
+
+    - name: Activer le pare-feu UFW
+      community.general.ufw:
+        state: enabled
+
+- name: Sécuriser les noeuds surveillés
+  hosts: managed_nodes
+  become: yes
+  vars:
+    monitoring_ip: "{{ groups['monitoring_server'][0] }}"
+  tasks:
+    - name: Autoriser SSH avant tout
+      community.general.ufw:
+        rule: allow
+        name: OpenSSH
+
+    - name: "Autoriser Node Exporter UNIQUEMENT depuis monitoring-server"
+      community.general.ufw:
+        rule: allow
+        port: '9100'
+        proto: tcp
+        src: "{{ monitoring_ip }}"
+
+    - name: Politique par défaut - refuser tout le trafic entrant
+      community.general.ufw:
+        direction: incoming
+        policy: deny
+
+    - name: Politique par défaut - autoriser tout le trafic sortant
+      community.general.ufw:
+        direction: outgoing
+        policy: allow
+
+    - name: Activer le pare-feu UFW
+      community.general.ufw:
+        state: enabled

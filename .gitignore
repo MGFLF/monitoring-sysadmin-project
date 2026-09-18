@@ -1,0 +1,14 @@
+# Secrets Ansible Vault (le fichier reste chiffré, mais autant ne jamais le versionner)
+ansible/vars/secrets.yml
+
+# Fichiers de config générés dynamiquement sur le serveur (pas dans le repo Git de toute façon,
+# mais on l'exclut par précaution si jamais quelqu'un le récupère localement)
+alertmanager.yml
+
+# Fichiers Python/Ansible temporaires
+*.retry
+*.pyc
+__pycache__/
+
+# Fichiers système
+.DS_Store

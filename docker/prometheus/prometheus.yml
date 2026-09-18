@@ -1,0 +1,21 @@
+global:
+  scrape_interval: 15s
+
+rule_files:
+  - "/etc/prometheus/rules/alerts.yml"
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ['alertmanager:9093']
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: 'node_exporter'
+    static_configs:
+      - targets:
+          - '192.168.0.175:9100'
+          - '192.168.0.144:9100'
