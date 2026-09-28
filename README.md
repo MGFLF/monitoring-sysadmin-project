@@ -30,24 +30,36 @@ Toutes les machines communiquent sur un réseau privé dédié, isolé du reste 
 
 ## 📂 Structure du dépôt
 
+~~~text
+monitoring-sysadmin-project/
 ├── ansible/
-│ ├── inventory.ini # Inventaire des machines (groupes monitoring_server / managed_nodes)
-│ ├── playbooks/
-│ │ ├── node_exporter.yml # Installation de Node Exporter sur les noeuds
-│ │ ├── docker_install.yml # Installation de Docker sur le serveur de monitoring
-│ │ ├── deploy_monitoring.yml # Déploiement de la stack Prometheus/Alertmanager/Grafana
-│ │ ├── firewall.yml # Configuration du pare-feu UFW (moindre privilège)
-│ │ └── https_grafana.yml # Reverse proxy Nginx + HTTPS pour Grafana
-│ ├── templates/
-│ │ └── alertmanager.yml.j2 # Template de config Alertmanager (secrets injectés via Vault)
-│ └── vars/
-│ └── secrets.yml # Secrets chiffrés (Ansible Vault) — non versionné
-└── docker/
-├── docker-compose.yml # Définition des services (Prometheus, Alertmanager, Grafana)
-└── prometheus/
-├── prometheus.yml # Config Prometheus (cibles de scraping, alerting)
-└── rules/
-└── alerts.yml # Règles d'alerte (CPU, disque, disponibilité)
+│   ├── inventory.ini              # Machines gérées, réparties en groupes
+│   ├── playbooks/
+│   │   ├── docker_install.yml     # Installe Docker
+│   │   ├── node_exporter.yml      # Installe Node Exporter sur les nœuds
+│   │   ├── deploy_monitoring.yml  # Déploie Prometheus, Alertmanager, Grafana
+│   │   ├── firewall.yml           # Pare-feu UFW (moindre privilège)
+│   │   └── https_grafana.yml      # Nginx + HTTPS pour Grafana
+│   ├── templates/
+│   │   └── alertmanager.yml.j2    # Config Alertmanager (secrets injectés)
+│   └── vars/
+│       └── secrets.yml            # Secrets chiffrés (Vault), non versionné
+├── docker/
+│   ├── docker-compose.yml         # Services : Prometheus, Alertmanager, Grafana
+│   └── prometheus/
+│       ├── prometheus.yml         # Cibles de scraping + alerting
+│       └── rules/
+│           └── alerts.yml         # Règles d'alerte
+└── docs/
+    └── images/                    # Captures d'écran utilisées dans ce README
+~~~
+
+| Dossier | Rôle |
+|---|---|
+| `ansible/` | Tout ce qui **automatise** le déploiement : inventaire, playbooks, templates |
+| `docker/` | Tout ce qui **tourne** sur le serveur de monitoring : services et règles d'alerte |
+| `docs/images/` | Les captures d'écran de l'aperçu |
+
 ## 🚀 Déploiement
 
 ### Prérequis
